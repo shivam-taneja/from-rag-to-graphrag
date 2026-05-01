@@ -1,13 +1,21 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { pipeline } from '@xenova/transformers';
 import { generateText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
-import neo4j, { Driver } from 'neo4j-driver';
+import neo4j, { Driver, isInt } from 'neo4j-driver';
 
 @Injectable()
-export class AppService {
-  private embedder: any;
+export class AppService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(AppService.name);
+
+  private embedderPromise: Promise<any>;
   private neo4jDriver: Driver;
   private groq: ReturnType<typeof createGroq>;
 
@@ -19,14 +27,25 @@ export class AppService {
     this.groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
   }
 
+  // Pre-load the model when the NestJS server starts
+  async onModuleInit() {
+    this.logger.log('Loading Xenova embedding model...');
+    this.embedderPromise = pipeline(
+      'feature-extraction',
+      'Xenova/all-MiniLM-L6-v2',
+    );
+    await this.embedderPromise;
+    this.logger.log('Embedding model successfully loaded into memory.');
+  }
+
+  async onModuleDestroy() {
+    this.logger.log('Closing Neo4j Driver...');
+    await this.neo4jDriver.close();
+  }
+
   private async embed(text: string): Promise<number[]> {
-    if (!this.embedder) {
-      this.embedder = await pipeline(
-        'feature-extraction',
-        'Xenova/all-MiniLM-L6-v2',
-      );
-    }
-    const output = await this.embedder(text, {
+    const embedder = await this.embedderPromise;
+    const output = await embedder(text, {
       pooling: 'mean',
       normalize: true,
     });
@@ -54,7 +73,7 @@ export class AppService {
 
       return { answer: text, context: chunks };
     } catch (error) {
-      console.error(error);
+      this.logger.error('Error in Plain RAG execution', error);
       throw new InternalServerErrorException('Error in Plain RAG');
     }
   }
@@ -62,7 +81,6 @@ export class AppService {
   async graphRag(query: string) {
     const session = this.neo4jDriver.session();
     try {
-      // Step 1: Generate Cypher query
       const cypherPrompt = `
       You are a Neo4j Cypher expert. Convert the user's natural language question into a Cypher query.
       
@@ -82,7 +100,8 @@ export class AppService {
       1. NEVER use 'GROUP BY'. Cypher performs implicit grouping. For example, use 'WITH actor, count(*) as count' or 'RETURN actor, count(*)'.
       2. Use 'WITH' to chain aggregations or filters (e.g., 'WITH a, count(m) as cnt WHERE cnt > 3').
       3. Return clear, distinct results.
-      4. Return ONLY the raw Cypher query string. No markdown, no explanation.
+      4. ALWAYS RETURN AGGREGATE VALUES: If you use aggregate functions (like count(*)), you MUST explicitly RETURN them so the count is passed back to the user context.
+      5. Return ONLY the raw Cypher query string. No markdown, no explanation.
 
       Question: ${query}
       `;
@@ -97,25 +116,27 @@ export class AppService {
         .replace(/\`\`\`/g, '')
         .trim();
 
-      // Step 2: Execute Cypher query
       let graphData: any[] = [];
       try {
         const result = await session.run(cypherQuery);
         graphData = result.records.map((record) => {
-          const obj: any = {};
-          record.keys.forEach((key) => {
-            obj[key] = record.get(key);
+          const obj: Record<string, any> = {};
+          record.keys.forEach((key: string) => {
+            let val = record.get(key);
+            if (isInt(val)) {
+              val = val.toNumber();
+            }
+            obj[key] = val;
           });
           return obj;
         });
       } catch (e) {
-        console.error('Cypher query execution failed:', cypherQuery, e);
+        this.logger.error('Cypher query execution failed:', cypherQuery, e);
         graphData = [{ error: 'Could not retrieve data from graph.' }];
       }
 
       const context = JSON.stringify(graphData);
 
-      // Step 3: Generate answer using Graph Context
       const { text } = await generateText({
         model: this.groq('llama-3.1-8b-instant'),
         system: `You are a helpful movie assistant. Answer the user's question based on the provided Graph DB context. Make the answer natural and human-readable. Context: ${context}`,
@@ -124,7 +145,7 @@ export class AppService {
 
       return { answer: text, context: graphData, cypherQuery };
     } catch (error) {
-      console.error(error);
+      this.logger.error('Error in Graph RAG', error);
       throw new InternalServerErrorException('Error in Graph RAG');
     } finally {
       await session.close();
