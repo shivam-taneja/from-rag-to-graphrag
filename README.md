@@ -78,6 +78,64 @@ Access the interactive documentation at:
 | **Multi-hop Reasoning**    | "Recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi." | Graph RAG |
 | **Relationship Discovery** | "Which actors have worked with Christopher Nolan multiple times?"                           | Graph RAG |
 
+## Case Study: Plain RAG vs Graph RAG
+
+To demonstrate the difference, we asked both systems the same complex analytical question:
+**"Find actors who have appeared in more than 3 movies together."**
+
+### Plain RAG (Vector Search)
+
+Plain RAG fails this task because it relies on retrieving the most "similar" text chunks. Since no single chunk contains a list of all actor collaborations, the system only sees a fragmented view.
+
+**Answer:**
+
+> "Based on the provided context, the actors who have appeared in more than 3 movies together are none in the provided context."
+
+**Context Retrieved:**
+
+- _Once Upon a Time in Hollywood_ (Leo, Brad, Margot)
+- _Catch Me If You Can_ (Leo, Tom Hanks)
+- _The Departed_ (Leo, Matt Damon)
+
+**Why it failed:** It only retrieved 3 chunks. It has no way to "count" or "link" actors across the entire database of 105 movies.
+
+---
+
+### Graph RAG (Knowledge Graph)
+
+Graph RAG excels here because it converts the natural language question into a **Cypher query**. This allows it to traverse the entire network of relationships and perform global aggregations.
+
+**Answer:**
+
+> "I found several pairs of actors who have worked together in more than 3 movies. For example:
+>
+> 1. **Matt Damon and Ben Affleck**: 4 movies (_Good Will Hunting_, _The Last Duel_, _Air_, _Dogma_)
+> 2. **Cillian Murphy and Tom Hardy**: 4 movies (_Inception_, _The Dark Knight Rises_, _Dunkirk_, _Peaky Blinders_)"
+
+**Cypher Query Generated:**
+
+```cypher
+MATCH (a1:Actor)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(a2:Actor)
+WHERE id(a1) < id(a2)
+WITH a1, a2, count(m) as sharedMovies
+WHERE sharedMovies > 3
+RETURN a1.name, a2.name, sharedMovies
+```
+
+**Why it won:** It didn't look for "similar text." It looked for **structural patterns**. It traversed every `:ACTED_IN` relationship in the database to find the exact answer, regardless of where the data was physically stored.
+
+---
+
+## Technical Comparison
+
+| Feature                | Plain RAG (Vector)  | Graph RAG (Neo4j)      |
+| :--------------------- | :------------------ | :--------------------- |
+| **Search Method**      | Semantic Similarity | Structural Traversal   |
+| **Data View**          | Localized (Chunks)  | Global (Network)       |
+| **Complex Joins**      | Poor (Hallucinates) | Excellent (Precise)    |
+| **Analytical Queries** | Low Accuracy        | High Accuracy          |
+| **Best For**           | Fact Retrieval      | Relationship Discovery |
+
 ---
 
 ## The Difference
