@@ -1,71 +1,115 @@
-# from-rag-to-graphrag
+# From RAG to Graph RAG
 
-This repository demonstrates the practical differences between plain Retrieval Augmented Generation (RAG) and Graph RAG using a movie dataset.
+This project provides a hands-on comparison between **Plain Retrieval-Augmented Generation (RAG)** and **Graph RAG**. Using a movie dataset, it demonstrates how shifting from vector-only search to relationship-aware retrieval (Knowledge Graphs) can solve complex, multi-hop reasoning problems.
+
+---
+
+## Quickstart
+
+Follow these steps to get the project running locally.
+
+### 1. Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+)
+- [pnpm](https://pnpm.io/) (Recommended)
+- [Docker](https://www.docker.com/) (For Postgres and Neo4j)
+- A [Groq API Key](https://console.groq.com/)
+
+### 2. Setup Environment
+
+```bash
+git clone https://github.com/shivam-taneja/from-rag-to-graphrag.git
+cd from-rag-to-graphrag
+cp .env.example .env
+```
+
+_Note: Update `GROQ_API_KEY` in your `.env` file._
+
+### 3. Spin up Infrastructure
+
+Start the Postgres (with pgvector) and Neo4j containers:
+
+```bash
+pnpm run infra:setup
+```
+
+### 4. Install & Seed Data
+
+This will install dependencies, run Prisma migrations, and seed both databases with movie data and embeddings.
+
+```bash
+pnpm install
+pnpm run db:setup
+pnpm run db:seed
+```
+
+### 5. Run the App
+
+```bash
+pnpm run dev
+```
+
+The server will start at http://localhost:3000.
+
+---
+
+## Tech Stack
+
+- **Core**: [NestJS](https://nestjs.com/)
+- **Vector Search**: [Postgres](https://www.postgresql.org/) + [pgvector](https://github.com/pgvector/pgvector)
+- **Knowledge Graph**: [Neo4j](https://neo4j.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai/) with [Groq](https://groq.com/) (Llama 3.1 8B)
+- **Embeddings**: Local processing via Xenova/Transformers.js
+
+---
+
+## How to Test (API & Swagger)
+
+Access the interactive documentation at:
+**[http://localhost:3000/api](http://localhost:3000/api)**
+
+### Sample Queries to Try
+
+| Goal                       | Query                                                                                       | Best Mode |
+| -------------------------- | ------------------------------------------------------------------------------------------- | --------- |
+| **Semantic Search**        | "Suggest some space exploration movies."                                                    | Plain RAG |
+| **Simple Retrieval**       | "Who directed Inception?"                                                                   | Plain RAG |
+| **Multi-hop Reasoning**    | "Recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi." | Graph RAG |
+| **Relationship Discovery** | "Which actors have worked with Christopher Nolan multiple times?"                           | Graph RAG |
+
+---
+
+## The Difference
+
+### Plain RAG (Vector-Based)
+
+Retrieves context based on **textual similarity**.
+
+- **Pros**: Great for broad semantic matching and answering direct questions.
+- **Cons**: Struggles with complex relationships and "connecting the dots" across multiple entities.
+
+### Graph RAG (Relationship-Based)
+
+Retrieves context by **traversing entity connections** in a Knowledge Graph.
+
+- **Pros**: Excels at multi-hop reasoning, finding hidden patterns, and structured data retrieval.
+- **Cons**: Requires defined schema and graph modeling.
+
+---
 
 ## Folder Structure
 
 ```text
 .
 ├── prisma/
-│   ├── schema/           # Prisma models for Postgres
+│   ├── schema/           # Postgres models for pgvector
 │   └── seed.ts           # Seeding logic for Postgres and Neo4j
 ├── src/
-│   ├── app.controller.ts # API endpoints for RAG queries
-│   ├── app.module.ts     # Main application module
-│   ├── app.service.ts    # AI logic (Groq, Cypher, Vector Search)
-│   ├── main.ts           # App bootstrap and Swagger setup
-│   └── prisma.service.ts # Database connection management
-├── docker-compose.yml    # Postgres and Neo4j infrastructure
-└── package.json          # Dependencies and scripts
+│   ├── app.controller.ts # API endpoints
+│   ├── app.service.ts    # AI logic (Vector Search vs. Cypher Queries)
+│   ├── main.ts           # Swagger & App Bootstrap
+│   └── prisma.service.ts # DB connections
+├── docker-compose.yml    # Database infrastructure
+└── package.json          # Scripts & Dependencies
 ```
-
-## Tech Stack
-
-- **Framework**: NestJS (Node.js)
-- **Database**: Postgres (pgvector) and Neo4j (Graph)
-- **ORM**: Prisma
-- **AI SDK**: Vercel AI SDK with Groq
-- **Model**: Llama 3.1 8B Instant
-- **Embeddings**: Xenova Transformers (Local)
-
-## API Endpoints
-
-Access the interactive Swagger documentation at `http://localhost:3000/api` once the server is running.
-
-- **GET /rag/plain**: Semantic search using Postgres pgvector.
-- **GET /rag/graph**: Relationship-based retrieval using Neo4j Cypher.
-
-## Quickstart
-
-1. **Clone and Setup**
-
-   ```bash
-   git clone https://github.com/shivam-taneja/from-rag-to-graphrag.git
-   cd from-rag-to-graphrag
-   cp .env.example .env
-   ```
-
-2. **Start Infrastructure**
-
-   ```bash
-   pnpm run infra:setup
-   ```
-
-3. **Install and Seed**
-
-   ```bash
-   pnpm install
-   pnpm run db:setup
-   pnpm run db:seed
-   ```
-
-4. **Run Application**
-   ```bash
-   pnpm run dev
-   ```
-
-## Why it Matters
-
-Plain RAG retrieves information based on textual similarity. This is effective for direct matches but struggles with multi-hop reasoning.
-
-Graph RAG retrieves information based on entity relationships. It can answer complex questions like "recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi films" by traversing explicitly defined connections in the graph.
