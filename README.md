@@ -35,7 +35,7 @@ pnpm run infra:setup
 
 ### 4. Install & Seed Data
 
-This will install dependencies, run Prisma migrations, and seed both databases with movie data and embeddings.
+This will install dependencies, run Prisma migrations, and seed both databases. The movie data is managed separately in `prisma/data.ts`.
 
 ```bash
 pnpm install
@@ -74,9 +74,11 @@ Access the interactive documentation at:
 | Goal                       | Query                                                                                       | Best Mode |
 | -------------------------- | ------------------------------------------------------------------------------------------- | --------- |
 | **Semantic Search**        | "Suggest some space exploration movies."                                                    | Plain RAG |
-| **Simple Retrieval**       | "Who directed Inception?"                                                                   | Plain RAG |
+| **Global Analytical**      | "Find actors who have appeared in more than 3 movies together."                             | Graph RAG |
 | **Multi-hop Reasoning**    | "Recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi." | Graph RAG |
 | **Relationship Discovery** | "Which actors have worked with Christopher Nolan multiple times?"                           | Graph RAG |
+
+---
 
 ## The Difference
 
@@ -85,7 +87,7 @@ Access the interactive documentation at:
 Retrieves context based on textual similarity.
 
 - **Pros**: Great for broad semantic matching and answering direct questions.
-- **Cons**: Struggles with complex relationships and connecting the dots across multiple entities.
+- **Cons**: Struggles with complex relationships and connecting the dots across multiple entities. In a "Find actors in 3+ movies" query, it only sees a few random chunks and can't perform global counting.
 
 ### Graph RAG (Relationship-Based)
 
@@ -117,10 +119,11 @@ Retrieves context by traversing entity connections in a Knowledge Graph.
 ```text
 .
 ├── prisma/
+│   ├── data.ts           # Centralized movie dataset
 │   ├── schema/           # Postgres models for pgvector
-│   └── seed.ts           # Seeding logic for Postgres and Neo4j
+│   └── seed.ts           # Seeding logic (Imports from data.ts)
 ├── src/
-│   ├── app.controller.ts # API endpoints
+│   ├── app.controller.ts # API endpoints and Swagger examples
 │   ├── app.service.ts    # AI logic (Vector Search vs. Cypher Queries)
 │   ├── main.ts           # Swagger & App Bootstrap
 │   └── prisma.service.ts # DB connections
