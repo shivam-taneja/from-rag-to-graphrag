@@ -1,6 +1,5 @@
 services:
   postgres:
-    # image: pgvector/pgvector:pg16
     image: pgvector/pgvector:pg16
     container_name: from_rag_to_graphrag-postgres
     restart: unless-stopped

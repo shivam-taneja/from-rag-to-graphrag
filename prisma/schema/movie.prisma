@@ -11,9 +11,9 @@ model Movie {
 }
 
 model MovieChunk {
-  id        String                       @id @default(cuid())
+  id        String                      @id @default(cuid())
   movieId   String
-  movie     Movie                        @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  content   String                       @db.Text
-  embedding Unsupported("vector(1536)")?
+  movie     Movie                       @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  content   String                      @db.Text
+  embedding Unsupported("vector(384)")?
 }

@@ -36,3 +36,6 @@ lerna-debug.log*
 .env
 
 /prisma/generated
+/src/generated
+# CocoIndex Code (ccc)
+/.cocoindex_code/

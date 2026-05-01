@@ -1,98 +1,71 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# from-rag-to-graphrag
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This repository demonstrates the practical differences between plain Retrieval Augmented Generation (RAG) and Graph RAG using a movie dataset.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Folder Structure
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ pnpm install
+```text
+.
+├── prisma/
+│   ├── schema/           # Prisma models for Postgres
+│   └── seed.ts           # Seeding logic for Postgres and Neo4j
+├── src/
+│   ├── app.controller.ts # API endpoints for RAG queries
+│   ├── app.module.ts     # Main application module
+│   ├── app.service.ts    # AI logic (Groq, Cypher, Vector Search)
+│   ├── main.ts           # App bootstrap and Swagger setup
+│   └── prisma.service.ts # Database connection management
+├── docker-compose.yml    # Postgres and Neo4j infrastructure
+└── package.json          # Dependencies and scripts
 ```
 
-## Compile and run the project
+## Tech Stack
 
-```bash
-# development
-$ pnpm run start
+- **Framework**: NestJS (Node.js)
+- **Database**: Postgres (pgvector) and Neo4j (Graph)
+- **ORM**: Prisma
+- **AI SDK**: Vercel AI SDK with Groq
+- **Model**: Llama 3.1 8B Instant
+- **Embeddings**: Xenova Transformers (Local)
 
-# watch mode
-$ pnpm run start:dev
+## API Endpoints
 
-# production mode
-$ pnpm run start:prod
-```
+Access the interactive Swagger documentation at `http://localhost:3000/api` once the server is running.
 
-## Run tests
+- **GET /rag/plain**: Semantic search using Postgres pgvector.
+- **GET /rag/graph**: Relationship-based retrieval using Neo4j Cypher.
 
-```bash
-# unit tests
-$ pnpm run test
+## Quickstart
 
-# e2e tests
-$ pnpm run test:e2e
+1. **Clone and Setup**
 
-# test coverage
-$ pnpm run test:cov
-```
+   ```bash
+   git clone https://github.com/shivam-taneja/from-rag-to-graphrag.git
+   cd from-rag-to-graphrag
+   cp .env.example .env
+   ```
 
-## Deployment
+2. **Start Infrastructure**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+   ```bash
+   pnpm run infra:setup
+   ```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+3. **Install and Seed**
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+   ```bash
+   pnpm install
+   pnpm run db:setup
+   pnpm run db:seed
+   ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+4. **Run Application**
+   ```bash
+   pnpm run dev
+   ```
 
-## Resources
+## Why it Matters
 
-Check out a few resources that may come in handy when working with NestJS:
+Plain RAG retrieves information based on textual similarity. This is effective for direct matches but struggles with multi-hop reasoning.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Graph RAG retrieves information based on entity relationships. It can answer complex questions like "recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi films" by traversing explicitly defined connections in the graph.
