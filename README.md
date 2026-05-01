@@ -1,6 +1,6 @@
 # From RAG to Graph RAG
 
-This project provides a hands-on comparison between **Plain Retrieval-Augmented Generation (RAG)** and **Graph RAG**. Using a movie dataset, it demonstrates how shifting from vector-only search to relationship-aware retrieval (Knowledge Graphs) can solve complex, multi-hop reasoning problems.
+This project provides a hands-on comparison between **Plain Retrieval-Augmented Generation (RAG)** and **Graph RAG**. Using a dataset of **105 movies** with complex relationships, it demonstrates how shifting from vector-only search to relationship-aware retrieval (Knowledge Graphs) can solve complex, multi-hop reasoning problems.
 
 ---
 

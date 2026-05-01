@@ -65,7 +65,8 @@ export class AppService {
       // Step 1: Generate Cypher query
       const cypherPrompt = `
       You are a Neo4j Cypher expert. Convert the user's natural language question into a Cypher query.
-      The graph schema is as follows:
+      
+      Graph Schema:
       Nodes: 
       - Movie {title: String, year: Integer, genre: String, plot: String}
       - Director {name: String}
@@ -77,7 +78,12 @@ export class AppService {
       - (Movie)-[:IN_GENRE]->(Genre)
       - (Actor)-[:ACTED_IN]->(Movie)
 
-      Return ONLY the Cypher query and nothing else. No markdown formatting, no explanation. Just the raw Cypher string.
+      CRITICAL RULES:
+      1. NEVER use 'GROUP BY'. Cypher performs implicit grouping. For example, use 'WITH actor, count(*) as count' or 'RETURN actor, count(*)'.
+      2. Use 'WITH' to chain aggregations or filters (e.g., 'WITH a, count(m) as cnt WHERE cnt > 3').
+      3. Return clear, distinct results.
+      4. Return ONLY the raw Cypher query string. No markdown, no explanation.
+
       Question: ${query}
       `;
 
