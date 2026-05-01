@@ -78,23 +78,37 @@ Access the interactive documentation at:
 | **Multi-hop Reasoning**    | "Recommend movies featuring Leonardo DiCaprio directed by someone who also directs sci-fi." | Graph RAG |
 | **Relationship Discovery** | "Which actors have worked with Christopher Nolan multiple times?"                           | Graph RAG |
 
----
-
 ## The Difference
 
 ### Plain RAG (Vector-Based)
 
-Retrieves context based on **textual similarity**.
+Retrieves context based on textual similarity.
 
 - **Pros**: Great for broad semantic matching and answering direct questions.
-- **Cons**: Struggles with complex relationships and "connecting the dots" across multiple entities.
+- **Cons**: Struggles with complex relationships and connecting the dots across multiple entities.
 
 ### Graph RAG (Relationship-Based)
 
-Retrieves context by **traversing entity connections** in a Knowledge Graph.
+Retrieves context by traversing entity connections in a Knowledge Graph.
 
 - **Pros**: Excels at multi-hop reasoning, finding hidden patterns, and structured data retrieval.
 - **Cons**: Requires defined schema and graph modeling.
+
+---
+
+## How it Works
+
+### Plain RAG Workflow
+
+1. **Query Embedding**: The user query is converted into a high-dimensional vector using the Xenova/all-MiniLM-L6-v2 model.
+2. **Vector Retrieval**: Postgres (via pgvector) performs a cosine similarity search to find the top 3 most relevant text chunks from the database.
+3. **LLM Generation**: The retrieved text chunks are passed as context to Groq (Llama 3.1 8B), which generates a natural language answer based strictly on that context.
+
+### Graph RAG Workflow
+
+1. **Cypher Generation**: The user query is sent to Groq (Llama 3.1 8B) along with the graph schema. The LLM translates the natural language query into a Neo4j Cypher query.
+2. **Graph Traversal**: The Cypher query is executed against Neo4j to retrieve structured data about entities (Movies, Actors, Directors) and their relationships.
+3. **LLM Synthesis**: The resulting graph data is serialized to JSON and provided to the LLM. The LLM then synthesizes this structured information into a human-readable response.
 
 ---
 
